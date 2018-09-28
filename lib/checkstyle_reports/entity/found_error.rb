@@ -2,9 +2,32 @@
 
 module CheckstyleReports::Entity
   class FoundError
-    attr_reader :line_number # Fixnum
-    attr_reader :column_number # Optional Fixnum
-    attr_reader :severity, :html_unescaped_message, :source # String
+
+    # A detected line number
+    #
+    # @return [Fixnum]
+    attr_reader :line_number
+
+    # A detected column
+    # Optionality depends on 'source'
+    #
+    # @return [Fixnum, nil]
+    attr_reader :column_number
+
+    # A severity of this error
+    #
+    # @return [String]
+    attr_reader :severity
+
+    # An error message
+    #
+    # @return [String]
+    attr_reader :html_unescaped_message
+
+    # A name of a detector
+    #
+    # @return [String]
+    attr_reader :source # String
 
     def initialize(node)
       raise "Wrong node was passed. expected error but #{node.name}" if node.name != "error"

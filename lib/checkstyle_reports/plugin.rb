@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require "pathname"
 require "rexml/document"
+
 require_relative "gem_version"
 
 require_relative "entity/found_error"
