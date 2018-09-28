@@ -6,7 +6,7 @@ require "checkstyle_reports/gem_version.rb"
 
 Gem::Specification.new do |spec|
   spec.name          = "danger-checkstyle_reports"
-  spec.version       = Apkstats::VERSION
+  spec.version       = CheckstyleReports::VERSION
   spec.authors       = ["Jumpei Matsuda"]
   spec.email         = ["jmatsu.drm@gmail.com"]
   spec.description   = "To report checkstyle results via danger."
