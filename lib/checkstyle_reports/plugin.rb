@@ -12,9 +12,9 @@ module Danger
   # Show stats of your apk file.
   # By default, it's done using apkanalyzer in android sdk.
   #
-  # You need to specify the project root. Sometimes it is same with git's toplevel path.
+  # You need to specify the project root. You don't need do it if it is same with git's toplevel path.
   #
-  #         checkstyle_reports.root_path=$(git rev-parse --show-toplevel)
+  #         checkstyle_reports.root_path=/path/to/project
   #
   # @example Report errors in app/build/checkstyle/checkstyle.xml
   #
@@ -24,9 +24,10 @@ module Danger
   # @tags android, apk_stats
   #
   class DangerCheckstyleReports < Plugin
-    # *Required*
+    # *Optional*
     # An absolute path to a root.
     # To comment errors to VCS, this needs to know relative path of files from the root.
+    # The root path of git repository is used by default.
     #
     # @return [String]
     attr_accessor :root_path
@@ -40,7 +41,7 @@ module Danger
     def report(xml_file, inline_comment: true, prefix_path: nil)
       raise "File not found" unless File.exist?(xml_file)
 
-      prefix_path ||= root_path
+      prefix_path ||= (root_path || `git rev-parse --show-toplevel`.chomp)
 
       files = REXML::Document.new(File.read(xml_file)).root.each("file") do |f|
         FoundFile.new(f, prefix: prefix_path)
