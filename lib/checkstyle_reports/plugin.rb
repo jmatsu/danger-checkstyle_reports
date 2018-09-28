@@ -4,6 +4,7 @@ require "rexml/document"
 require_relative "gem_version"
 
 require_relative "entity/found_error"
+require_relative "entity/found_file"
 
 module Danger
   # Show stats of your apk file.
