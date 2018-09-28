@@ -1,15 +1,9 @@
 # frozen_string_literal: true
 
+require "rexml/document"
 require_relative "gem_version"
-require_relative "helper/bytes"
 
-require_relative "entity/apk_info"
-require_relative "entity/apk_info_diff"
-require_relative "entity/feature"
-require_relative "entity/permission"
-
-require_relative "command/executable"
-require_relative "command/apk_analyzer"
+require_relative "entity/found_error"
 
 module Danger
   # Show stats of your apk file.

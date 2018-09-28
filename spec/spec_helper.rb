@@ -70,4 +70,3 @@ def testing_dangerfile
   Danger::Dangerfile.new(env, testing_ui)
 end
 
-require_relative "stub/command"
