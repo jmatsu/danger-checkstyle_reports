@@ -1,0 +1,6 @@
+.DS_Store
+pkg
+.idea/
+.yardoc
+**/vendor/bundle/
+*.gem
