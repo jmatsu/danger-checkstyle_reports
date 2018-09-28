@@ -24,31 +24,75 @@ module Danger
   # @tags android, apk_stats
   #
   class DangerCheckstyleReports < Plugin
+    REPORT_LEVELS = %i(message warn error).freeze
+
     # *Optional*
     # An absolute path to a root.
     # To comment errors to VCS, this needs to know relative path of files from the root.
-    # The root path of git repository is used by default.
     #
-    # @return [String]
+    # @return [String] the root path of git repository by default.
     attr_accessor :root_path
 
-    # Report errors based on the given xml file
+    # *Optional*
+    # Create inline comment if true.
+    #
+    # @return [Boolean] true by default
+    attr_accessor :inline_comment
+
+    # *Optional*
+    # minimum severity to be reported (inclusive)
+    #
+    # @return [String, Symbol] error by default
+    attr_accessor :min_severity
+
+    # *Optional*
+    # Set report method
+    #
+    # @return [String, Symbol] error by default
+    attr_accessor :report_level
+
+    # Report errors based on the given xml file if needed
     #
     # @param [String] xml_file which contains checkstyle results to be reported
-    # @param [Boolean] inline_comment create inline comment if true, otherwise this reports a summary as a single comment
-    # @param [String, nil] prefix_path be another prefix path instead of root path if you want
     # @return [void] void
-    def report(xml_file, inline_comment: true, prefix_path: nil)
+    def report(xml_file)
+      raise "File path must not be blank" if xml_file.blank?
       raise "File not found" unless File.exist?(xml_file)
 
-      prefix_path ||= (root_path || `git rev-parse --show-toplevel`.chomp)
+      @min_severity ||= :error
+      @report_level ||= :error
+
+      raise "Report level must be in #{REPORT_LEVELS}" unless REPORT_LEVELS.include?(report_level)
+
+      prefix = root_path || `git rev-parse --show-toplevel`.chomp
 
       files = REXML::Document.new(File.read(xml_file)).root.each("file") do |f|
-        FoundFile.new(f, prefix: prefix_path)
+        FoundFile.new(f, prefix: prefix)
       end
 
-      if inline_comment && files.empty?
-        puts "STUB"
+      unless files.empty?
+        do_comment(files)
+      end
+    end
+
+    private
+
+    # Comment errors based on the given xml file to VCS
+    #
+    # @param [Array<FoundFile>] files which contains checkstyle results to be reported
+    # @return [void] void
+    def do_comment(files)
+      files.each do |f|
+        f.errors.each do |e|
+          # see severity
+          next if e.severity < min_severity
+
+          if inline_comment
+            self.public_send(report_level, e.html_unescaped_message, file: f.relative_path, line: e.line_number)
+          else
+            self.public_send(report_level, "#{e.relative_path} : #{e.html_unescaped_message} at #{e.line_number}")
+          end
+        end
       end
     end
   end
