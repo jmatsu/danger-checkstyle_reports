@@ -23,7 +23,7 @@ NODE
 NODE
 
   describe CheckstyleReports::Entity::FoundError do
-    let(:error) { FoundError.new(REXML::Document.new(node).elements.first) }
+    let(:error) { FoundError.new(REXML::Document.new(node).root) }
 
     context "sample1" do
       let(:node) { ERROR_NODE_SAMPLE_1 }

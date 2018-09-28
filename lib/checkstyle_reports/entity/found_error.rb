@@ -2,7 +2,6 @@
 
 module CheckstyleReports::Entity
   class FoundError
-
     # A detected line number
     #
     # @return [Fixnum]
