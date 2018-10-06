@@ -14,7 +14,7 @@ module Danger
     describe "with Dangerfile" do
       before do
         @dangerfile = testing_dangerfile
-        @my_plugin = @dangerfile.apkstats
+        @my_plugin = @dangerfile.checkstyle_reports
 
         # mock the PR data
         # you can then use this, eg. github.pr_author, later in the spec

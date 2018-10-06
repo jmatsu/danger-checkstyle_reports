@@ -9,19 +9,22 @@ require_relative "entity/found_error"
 require_relative "entity/found_file"
 
 module Danger
-  # Show stats of your apk file.
-  # By default, it's done using apkanalyzer in android sdk.
+  # Comment checkstyle reports.
   #
-  # You need to specify the project root. You don't need do it if it is same with git's toplevel path.
+  # You need to specify the project root. You don't need do it if it is same with git's top-level path.
   #
   #         checkstyle_reports.root_path=/path/to/project
   #
-  # @example Report errors in app/build/checkstyle/checkstyle.xml
+  # @example Report errors whose files have been modified (By default)
   #
-  #         checkstyle_reports.report("app/build/checkstyle/checkstyle.xml")
+  #         checkstyle_reports.report("app/build/checkstyle/checkstyle.xml"[, modified_files_only: true])
   #
-  # @see  Jumpei Matsuda/danger-apkstats
-  # @tags android, apk_stats
+  # @example Report all errors in app/build/checkstyle/checkstyle.xml
+  #
+  #         checkstyle_reports.report("app/build/checkstyle/checkstyle.xml", modified_files_only: false)
+  #
+  # @see  Jumpei Matsuda/danger-checkstyle_reports
+  # @tags android, checkstyle
   #
   class DangerCheckstyleReports < Plugin
     REPORT_LEVELS = %i(message warn error).freeze
@@ -74,8 +77,6 @@ module Danger
 
       raise "Report level must be in #{REPORT_LEVELS}" unless REPORT_LEVELS.include?(report_level)
 
-      prefix = root_path || `git rev-parse --show-toplevel`.chomp
-
       files = parse_xml(xml_file, modified_files_only)
 
       @error_file_count = files.count
@@ -89,7 +90,9 @@ module Danger
     private
 
     def parse_xml(file_path, modified_files_only)
-      files = REXML::Document.new(File.read(xml_file)).root.each("file") do |f|
+      prefix = root_path || `git rev-parse --show-toplevel`.chomp
+
+      files = REXML::Document.new(File.read(file_path)).root.each("file") do |f|
         FoundFile.new(f, prefix: prefix)
       end
 
@@ -98,6 +101,7 @@ module Danger
       end
 
       files.reject! { |f| f.errors.zero? }
+      files
     end
 
     # Comment errors based on the given xml file to VCS
