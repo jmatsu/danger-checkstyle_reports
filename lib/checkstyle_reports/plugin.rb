@@ -51,11 +51,21 @@ module Danger
     # @return [String, Symbol] error by default
     attr_accessor :report_level
 
+    # The number of reported errors
+    #
+    # @return [Fixnum] non-negative value
+    attr_reader :error_count
+
+    # The array of files which include at least one error
+    #
+    # @return [Array<String>] a collection of relative paths
+    attr_reader :reported_files
+
     # Report errors based on the given xml file if needed
     #
     # @param [String] xml_file which contains checkstyle results to be reported
     # @return [void] void
-    def report(xml_file)
+    def report(xml_file, modified_files_only: true)
       raise "File path must not be blank" if xml_file.blank?
       raise "File not found" unless File.exist?(xml_file)
 
@@ -66,9 +76,10 @@ module Danger
 
       prefix = root_path || `git rev-parse --show-toplevel`.chomp
 
-      files = REXML::Document.new(File.read(xml_file)).root.each("file") do |f|
-        FoundFile.new(f, prefix: prefix)
-      end
+      files = parse_xml(xml_file, modified_files_only)
+
+      @error_file_count = files.count
+      @reported_files = files.map(:&relative_path)
 
       unless files.empty?
         do_comment(files)
@@ -77,6 +88,18 @@ module Danger
 
     private
 
+    def parse_xml(file_path, modified_files_only)
+      files = REXML::Document.new(File.read(xml_file)).root.each("file") do |f|
+        FoundFile.new(f, prefix: prefix)
+      end
+
+      if modified_files_only
+        files.select! { git.modified_files.include?(f.relative_path) }
+      end
+
+      files.reject! { |f| f.errors.zero? }
+    end
+
     # Comment errors based on the given xml file to VCS
     #
     # @param [Array<FoundFile>] files which contains checkstyle results to be reported
@@ -84,7 +107,7 @@ module Danger
     def do_comment(files)
       files.each do |f|
         f.errors.each do |e|
-          # see severity
+          # check severity
           next if e.severity < min_severity
 
           if inline_comment
