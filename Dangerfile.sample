@@ -1,16 +1,3 @@
-checkstyle_reports.command_type=:apk_analyzer
+checkstyle_reports.inline_comment = true
+checkstyle_reports.report('checkstyle-results.xml', modified_files_only: true)
 
-# custom command path
-# apkstats.command_path='/path/to/analysis_command'
-
-message(apkstats.file_size)
-message(apkstats.download_size)
-message(apkstats.required_features)
-message(apkstats.non_required_features)
-message(apkstats.permissions)
-message(apkstats.min_sdk)
-message(apkstats.target_sdk)
-message("#{apkstats.reference_count}")
-message("#{apkstats.dex_count}")
-
-apkstats.compare_with('/spec/fixture/app-other5.apk', do_report: true)

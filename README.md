@@ -13,16 +13,12 @@ This reports checkstyle results.
 
 `checkstyle_reports` namespace is available under Dangerfile.
     
-### Required preparation
+### Report errors
 
 ```
-checkstyle_reports # required.
-```
-
-### Show attributes
-
-```
-checkstyle_reports.file_size #=> Fixnum
+# If you'd like inlining comments
+checkstyle_reports.inline_comment = true
+checkstyle_reports.report(/path/to/xml)
 ```
 
 ## Development
