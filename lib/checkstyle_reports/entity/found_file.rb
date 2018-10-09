@@ -40,7 +40,9 @@ module CheckstyleReports::Entity
       @path = @prefix + @relative_path
 
       @path = node.attributes["name"]
-      @errors = node.elements.each("error") { |n| FoundError.new(n) }
+      @errors = []
+
+      node.elements.each("error") { |n| @errors << FoundError.new(n) }
     end
 
     private
