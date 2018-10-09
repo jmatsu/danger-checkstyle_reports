@@ -64,7 +64,7 @@ module Danger
     # Report errors based on the given xml file if needed
     #
     # @param [String] xml_file which contains checkstyle results to be reported
-    # @param [Boolean] modified_files_only which is a flag to filter out non-modified files
+    # @param [Boolean] modified_files_only which is a flag to filter out non-added/non-modified files
     # @return [void] void
     def report(xml_file, modified_files_only: true)
       raise "File path must not be empty" if xml_file.empty?
@@ -80,7 +80,7 @@ module Danger
 
       @reported_files = files.map(&:relative_path)
 
-      do_comment(files, modified_files_only) unless files.empty?
+      do_comment(files) unless files.empty?
     end
 
     private
@@ -88,7 +88,7 @@ module Danger
     # Parse the given xml file and apply filters if needed
     #
     # @param [String] file_path which is a check-style xml file
-    # @param [Boolean] modified_files_only a flag to determine to apply modified files-only filter
+    # @param [Boolean] modified_files_only a flag to determine to apply added/modified files-only filter
     # @return [Array<FoundFile>] filtered files
     def parse_xml(file_path, modified_files_only)
       prefix = root_path || `git rev-parse --show-toplevel`.chomp
@@ -100,7 +100,9 @@ module Danger
       end
 
       if modified_files_only
-        files.select! { |f| git.modified_files.include?(f.relative_path) }
+        target_files = git.modified_files + git.added_files
+
+        files.select! { |f| target_files.include?(f.relative_path) }
       end
 
       files.reject! { |f| f.errors.empty? }
@@ -110,9 +112,8 @@ module Danger
     # Comment errors based on the given xml file to VCS
     #
     # @param [Array<FoundFile>] files which contains checkstyle results to be reported
-    # @param [Boolean] modified_files_only inherit the doc
     # @return [void] void
-    def do_comment(files, modified_files_only)
+    def do_comment(files)
       base_severity = CheckstyleReports::Severity.new(min_severity)
 
       files.each do |f|
@@ -120,7 +121,7 @@ module Danger
           # check severity
           next unless base_severity <= e.severity
 
-          if inline_comment && (modified_files_only || git.modified_files.include?(f.relative_path))
+          if inline_comment
             self.public_send(report_method, e.html_unescaped_message, file: f.relative_path, line: e.line_number)
           else
             self.public_send(report_method, "#{f.relative_path} : #{e.html_unescaped_message} at #{e.line_number}")
