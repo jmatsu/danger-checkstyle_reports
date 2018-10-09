@@ -67,6 +67,7 @@ module Danger
     # Report errors based on the given xml file if needed
     #
     # @param [String] xml_file which contains checkstyle results to be reported
+    # @param [Boolean] modified_files_only which is a flag to filter out non-modified files
     # @return [void] void
     def report(xml_file, modified_files_only: true)
       raise "File path must not be blank" if xml_file.blank?
@@ -80,15 +81,18 @@ module Danger
       files = parse_xml(xml_file, modified_files_only)
 
       @error_file_count = files.count
-      @reported_files = files.map(:&relative_path)
+      @reported_files = files.map(&:relative_path)
 
-      unless files.empty?
-        do_comment(files)
-      end
+      do_comment(files) unless files.empty?
     end
 
     private
 
+    # Parse the given xml file and apply filters if needed
+    #
+    # @param [String] file_path which is a check-style xml file
+    # @param [Boolean] modified_files_only a flag to determine to apply modified files-only filter
+    # @return [Array<FoundFile>] filtered files
     def parse_xml(file_path, modified_files_only)
       prefix = root_path || `git rev-parse --show-toplevel`.chomp
 
