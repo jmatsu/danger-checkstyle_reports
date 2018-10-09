@@ -30,6 +30,7 @@ module CheckstyleReports::Entity
 
       if Pathname.new(name).absolute?
         raise "Bad prefix was found for #{name}. #{@prefix} was a prefix." unless name.start_with?(@prefix)
+
         # Use delete_prefix when min support version becomes ruby 2.5
         @relative_path = name[@prefix.length, name.length - @prefix.length]
       else

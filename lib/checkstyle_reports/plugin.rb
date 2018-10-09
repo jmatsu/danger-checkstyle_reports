@@ -29,7 +29,7 @@ module Danger
   # @tags android, checkstyle
   #
   class DangerCheckstyleReports < Plugin
-    REPORT_LEVELS = %i(message warn error).freeze
+    REPORT_METHODS = %i(message warn error).freeze
 
     # *Optional*
     # An absolute path to a root.
@@ -54,7 +54,7 @@ module Danger
     # Set report method
     #
     # @return [String, Symbol] error by default
-    attr_accessor :report_level
+    attr_accessor :report_method
 
     # The array of files which include at least one error
     #
@@ -67,14 +67,14 @@ module Danger
     # @param [Boolean] modified_files_only which is a flag to filter out non-modified files
     # @return [void] void
     def report(xml_file, modified_files_only: true)
-      raise "File path must not be blank" if xml_file.blank?
+      raise "File path must not be empty" if xml_file.empty?
       raise "File not found" unless File.exist?(xml_file)
 
-      @min_severity = (@min_severity || :error).to_sym
-      @report_level = (@report_level || :error).to_sym
+      @min_severity = (min_severity || :error).to_sym
+      @report_method = (report_method || :error).to_sym
 
-      raise "Unknown severity found" unless CheckstyleReports::Severity::VALUES.include?(@min_severity)
-      raise "Report level must be in #{REPORT_LEVELS}" unless REPORT_LEVELS.include?(report_level)
+      raise "Unknown severity found" unless CheckstyleReports::Severity::VALUES.include?(min_severity)
+      raise "Unknown report method" unless REPORT_METHODS.include?(report_method)
 
       files = parse_xml(xml_file, modified_files_only)
 
@@ -118,9 +118,9 @@ module Danger
           next unless base_severity <= e.severity
 
           if inline_comment
-            self.public_send(report_level, e.html_unescaped_message, file: f.relative_path, line: e.line_number)
+            self.public_send(report_method, e.html_unescaped_message, file: f.relative_path, line: e.line_number)
           else
-            self.public_send(report_level, "#{e.relative_path} : #{e.html_unescaped_message} at #{e.line_number}")
+            self.public_send(report_method, "#{e.relative_path} : #{e.html_unescaped_message} at #{e.line_number}")
           end
         end
       end
