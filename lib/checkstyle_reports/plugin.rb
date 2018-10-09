@@ -29,7 +29,7 @@ module Danger
   # @tags android, checkstyle
   #
   class DangerCheckstyleReports < Plugin
-    REPORT_LEVELS = %i(message warn error).freeze
+    REPORT_METHODS = %i(message warn fail).freeze
 
     # *Optional*
     # An absolute path to a root.
@@ -54,12 +54,7 @@ module Danger
     # Set report method
     #
     # @return [String, Symbol] error by default
-    attr_accessor :report_level
-
-    # The number of reported errors
-    #
-    # @return [Fixnum] non-negative value
-    attr_reader :error_count
+    attr_accessor :report_method
 
     # The array of files which include at least one error
     #
@@ -72,20 +67,20 @@ module Danger
     # @param [Boolean] modified_files_only which is a flag to filter out non-modified files
     # @return [void] void
     def report(xml_file, modified_files_only: true)
-      raise "File path must not be blank" if xml_file.blank?
+      raise "File path must not be empty" if xml_file.empty?
       raise "File not found" unless File.exist?(xml_file)
 
-      @min_severity ||= :error
-      @report_level ||= :error
+      @min_severity = (min_severity || :error).to_sym
+      @report_method = (report_method || :fail).to_sym
 
-      raise "Report level must be in #{REPORT_LEVELS}" unless REPORT_LEVELS.include?(report_level)
+      raise "Unknown severity found" unless CheckstyleReports::Severity::VALUES.include?(min_severity)
+      raise "Unknown report method" unless REPORT_METHODS.include?(report_method)
 
       files = parse_xml(xml_file, modified_files_only)
 
-      @error_file_count = files.count
       @reported_files = files.map(&:relative_path)
 
-      do_comment(files) unless files.empty?
+      do_comment(files, modified_files_only) unless files.empty?
     end
 
     private
@@ -98,23 +93,26 @@ module Danger
     def parse_xml(file_path, modified_files_only)
       prefix = root_path || `git rev-parse --show-toplevel`.chomp
 
-      files = REXML::Document.new(File.read(file_path)).root.each("file") do |f|
-        FoundFile.new(f, prefix: prefix)
+      files = []
+
+      REXML::Document.new(File.read(file_path)).root.elements.each("file") do |f|
+        files << CheckstyleReports::Entity::FoundFile.new(f, prefix: prefix)
       end
 
       if modified_files_only
-        files.select! { git.modified_files.include?(f.relative_path) }
+        files.select! { |f| git.modified_files.include?(f.relative_path) }
       end
 
-      files.reject! { |f| f.errors.zero? }
+      files.reject! { |f| f.errors.empty? }
       files
     end
 
     # Comment errors based on the given xml file to VCS
     #
     # @param [Array<FoundFile>] files which contains checkstyle results to be reported
+    # @param [Boolean] modified_files_only inherit the doc
     # @return [void] void
-    def do_comment(files)
+    def do_comment(files, modified_files_only)
       base_severity = CheckstyleReports::Severity.new(min_severity)
 
       files.each do |f|
@@ -122,10 +120,10 @@ module Danger
           # check severity
           next unless base_severity <= e.severity
 
-          if inline_comment
-            self.public_send(report_level, e.html_unescaped_message, file: f.relative_path, line: e.line_number)
+          if inline_comment && (modified_files_only || git.modified_files.include?(f.relative_path))
+            self.public_send(report_method, e.html_unescaped_message, file: f.relative_path, line: e.line_number)
           else
-            self.public_send(report_level, "#{e.relative_path} : #{e.html_unescaped_message} at #{e.line_number}")
+            self.public_send(report_method, "#{f.relative_path} : #{e.html_unescaped_message} at #{e.line_number}")
           end
         end
       end
