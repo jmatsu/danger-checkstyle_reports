@@ -1,5 +1,4 @@
-apkstats.command_type=:apk_analyzer
-apkstats.apk_filepath='./spec/fixture/app-base.apk'
+checkstyle_reports.command_type=:apk_analyzer
 
 # custom command path
 # apkstats.command_path='/path/to/analysis_command'
