@@ -56,11 +56,6 @@ module Danger
     # @return [String, Symbol] error by default
     attr_accessor :report_level
 
-    # The number of reported errors
-    #
-    # @return [Fixnum] non-negative value
-    attr_reader :error_count
-
     # The array of files which include at least one error
     #
     # @return [Array<String>] a collection of relative paths
@@ -75,14 +70,14 @@ module Danger
       raise "File path must not be blank" if xml_file.blank?
       raise "File not found" unless File.exist?(xml_file)
 
-      @min_severity ||= :error
-      @report_level ||= :error
+      @min_severity = (@min_severity || :error).to_sym
+      @report_level = (@report_level || :error).to_sym
 
+      raise "Unknown severity found" unless CheckstyleReports::Severity::VALUES.include?(@min_severity)
       raise "Report level must be in #{REPORT_LEVELS}" unless REPORT_LEVELS.include?(report_level)
 
       files = parse_xml(xml_file, modified_files_only)
 
-      @error_file_count = files.count
       @reported_files = files.map(&:relative_path)
 
       do_comment(files) unless files.empty?
