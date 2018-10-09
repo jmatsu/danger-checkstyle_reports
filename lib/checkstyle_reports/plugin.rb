@@ -5,6 +5,8 @@ require "rexml/document"
 
 require_relative "gem_version"
 
+require_relative "lib/severity"
+
 require_relative "entity/found_error"
 require_relative "entity/found_file"
 
@@ -113,10 +115,12 @@ module Danger
     # @param [Array<FoundFile>] files which contains checkstyle results to be reported
     # @return [void] void
     def do_comment(files)
+      base_severity = CheckstyleReports::Severity.new(min_severity)
+
       files.each do |f|
         f.errors.each do |e|
           # check severity
-          next if e.severity < min_severity
+          next unless base_severity <= e.severity
 
           if inline_comment
             self.public_send(report_level, e.html_unescaped_message, file: f.relative_path, line: e.line_number)
